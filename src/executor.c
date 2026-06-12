@@ -23,6 +23,7 @@ static builtin_t builtins[] = {
     {"clear",  builtin_clear},
     {"exit",   builtin_exit},
     {"export", builtin_export},
+    {"tsh",    builtin_tsh},
     {"help",   builtin_help},
     {NULL, NULL}
 };
