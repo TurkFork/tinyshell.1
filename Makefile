@@ -1,0 +1,19 @@
+CC=gcc
+CFLAGS=-Wall -Wextra -Iinclude -g
+
+SRC=src/main.c \
+    src/parser.c \
+    src/executor.c \
+    src/prompt.c\
+	src/builtins.c
+
+OUT=tinyshell
+
+all:
+	$(CC) $(CFLAGS) $(SRC) -o $(OUT)
+
+run: all
+	./$(OUT)
+
+clean:
+	rm -f $(OUT)
