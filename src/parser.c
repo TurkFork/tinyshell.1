@@ -6,6 +6,7 @@
 #include "../include/command.h"
 
 #define MAX_TOKENS 128
+#define MAX_LINE 4096
 
 static int expand_var(char *buf, size_t bufsz, const char **pp)
 {
@@ -246,10 +247,57 @@ static command_t parse_command_str(char *str)
         }
         else
         {
-            int s = p - str;
+            char tok[MAX_LINE];
+            int ti = 0;
             while (*p && *p != ' ' && *p != '\t' && *p != '>' && *p != '<' && *p != '|' && *p != '&')
-                p++;
-            args[argc] = expand_word(str + s, p - str - s, 1);
+            {
+                if (*p == '"')
+                {
+                    p++;
+                    while (*p && *p != '"' && ti < MAX_LINE - 1)
+                    {
+                        if (*p == '$')
+                        {
+                            tok[ti] = '\0';
+                            const char *cp = p;
+                            expand_var(tok, sizeof(tok), &cp);
+                            ti = strlen(tok);
+                            p = (char *)cp;
+                        }
+                        else
+                        {
+                            tok[ti++] = *p++;
+                        }
+                    }
+                    if (*p) p++;
+                }
+                else if (*p == '\'')
+                {
+                    p++;
+                    while (*p && *p != '\'' && ti < MAX_LINE - 1)
+                        tok[ti++] = *p++;
+                    if (*p) p++;
+                }
+                else
+                {
+                    if (*p == '$')
+                    {
+                        tok[ti] = '\0';
+                        const char *cp = p;
+                        expand_var(tok, sizeof(tok), &cp);
+                        ti = strlen(tok);
+                        p = (char *)cp;
+                    }
+                    else
+                    {
+                        if (ti < MAX_LINE - 1)
+                            tok[ti++] = *p;
+                        p++;
+                    }
+                }
+            }
+            tok[ti] = '\0';
+            args[argc] = expand_tilde(tok);
             argc++;
         }
     }
