@@ -4,8 +4,10 @@ CFLAGS=-Wall -Wextra -Iinclude -g
 SRC=src/main.c \
     src/parser.c \
     src/executor.c \
-    src/prompt.c\
-	src/builtins.c
+    src/prompt.c \
+    src/builtins.c \
+    src/color.c \
+    src/input.c
 
 OUT=tinyshell
 

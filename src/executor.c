@@ -84,13 +84,13 @@ static int exec_command(command_t *cmd)
     setup_redirects(cmd);
 
     if (is_builtin(cmd->args[0]))
-        exit(run_builtin(cmd->args));
+        _exit(run_builtin(cmd->args));
 
     execvp(cmd->args[0], cmd->args);
     fprintf(stderr, "%stinyshell: %s: command not found%s\n",
             use_color() ? C_RED : "", cmd->args[0],
             use_color() ? C_RESET : "");
-    exit(127);
+    _exit(127);
 }
 
 static int spawn_command(command_t *cmd, int in_fd, int out_fd)

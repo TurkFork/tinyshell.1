@@ -7,11 +7,11 @@
 
 #include "../include/parser.h"
 #include "../include/executor.h"
-#include "../include/prompt.h"
+#include "../include/input.h"
 #include "../include/command.h"
 
-#define SHLINE_MAX 4096
 #define RC_FILE ".tinyshellrc"
+#define MAX_LINE 4096
 
 static volatile sig_atomic_t sigint_received = 0;
 
@@ -19,7 +19,6 @@ static void sigint_handler(int sig)
 {
     (void)sig;
     sigint_received = 1;
-    write(STDOUT_FILENO, "\n", 1);
 }
 
 static void load_config(void)
@@ -33,7 +32,7 @@ static void load_config(void)
     FILE *f = fopen(path, "r");
     if (!f) return;
 
-    char line[LINE_MAX];
+    char line[MAX_LINE];
     while (fgets(line, sizeof(line), f))
     {
         line[strcspn(line, "\n")] = '\0';
@@ -61,48 +60,53 @@ int main(void)
     sigaction(SIGINT, &sa, NULL);
 
     load_config();
+    init_history();
 
-    char input[LINE_MAX];
     int last_status = 0;
 
     while (1)
     {
-        sigint_received = 0;
-        print_prompt(last_status);
-
-        if (fgets(input, sizeof(input), stdin) == NULL)
+        if (sigint_received)
         {
-            if (feof(stdin))
-            {
-                printf("\n");
-                break;
-            }
-            clearerr(stdin);
+            sigint_received = 0;
             last_status = 130;
-            continue;
         }
+
+        char *input = read_input(last_status);
 
         if (sigint_received)
         {
+            sigint_received = 0;
             last_status = 130;
+            free(input);
             continue;
         }
 
-        input[strcspn(input, "\n")] = '\0';
+        if (input == NULL)
+        {
+            printf("\n");
+            break;
+        }
+
+        if (input[0] == '\0')
+        {
+            free(input);
+            continue;
+        }
 
         line_t line = parse_line(input);
 
         for (int i = 0; i < line.npipelines; i++)
-        {
             last_status = execute_pipeline(&line.pipelines[i]);
-        }
 
         char st[16];
         snprintf(st, sizeof(st), "%d", last_status);
         setenv("?", st, 1);
 
         free_line(&line);
+        free(input);
     }
 
+    save_history();
     return 0;
 }

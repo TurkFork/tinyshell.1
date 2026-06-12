@@ -6,6 +6,7 @@
 
 #include "../include/color.h"
 #include "../include/version.h"
+#include "../include/input.h"
 
 extern char **environ;
 
@@ -274,6 +275,12 @@ int builtin_tsh(char **args)
         return check_update();
     }
 
+    if (strcmp(args[1], "history") == 0)
+    {
+        print_history();
+        return 0;
+    }
+
     if (strcmp(args[1], "help") == 0 || strcmp(args[1], "-h") == 0 || strcmp(args[1], "--help") == 0)
     {
         printf("Usage: tsh <command>\n");
@@ -281,6 +288,7 @@ int builtin_tsh(char **args)
         printf("Commands:\n");
         printf("  -v, --version   Show version\n");
         printf("  update, check   Check for updates on GitHub\n");
+        printf("  history         Show command history\n");
         printf("  help, -h        Show this help\n");
         return 0;
     }

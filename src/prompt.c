@@ -8,15 +8,18 @@
 
 void print_prompt(int last_status)
 {
-    char hostname[256];
-    char cwd[PATH_MAX];
+    char hostname[256] = "?";
+    char cwd[PATH_MAX] = "?";
     char shortpath[PATH_MAX];
 
-    gethostname(hostname, sizeof(hostname));
-    getcwd(cwd, sizeof(cwd));
+    if (gethostname(hostname, sizeof(hostname)) != 0)
+        snprintf(hostname, sizeof(hostname), "?");
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL)
+        snprintf(cwd, sizeof(cwd), "?");
 
     char *user = getenv("USER");
-    if (!user) user = "user";
+    if (!user) user = "?";
 
     char *home = getenv("HOME");
     char *display = cwd;
