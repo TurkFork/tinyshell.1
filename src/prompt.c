@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "../include/color.h"
+
 void print_prompt(int last_status)
 {
     char hostname[256];
@@ -37,9 +39,28 @@ void print_prompt(int last_status)
         }
     }
 
-    if (last_status != 0)
-        printf("%s@%s %s [%d] $ ", user, hostname, display, last_status);
+    if (use_color())
+    {
+        printf("%s%s@%s %s%s%s",
+               C_BOLD C_GREEN, user, hostname,
+               C_CYAN, display, C_RESET);
+    }
     else
-        printf("%s@%s %s $ ", user, hostname, display);
+    {
+        printf("%s@%s %s", user, hostname, display);
+    }
+
+    if (last_status != 0)
+    {
+        if (use_color())
+            printf(" %s[%d]%s $ ", C_BOLD C_RED, last_status, C_RESET);
+        else
+            printf(" [%d] $ ", last_status);
+    }
+    else
+    {
+        printf(" $ ");
+    }
+
     fflush(stdout);
 }

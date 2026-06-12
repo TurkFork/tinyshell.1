@@ -4,6 +4,10 @@
 #include <string.h>
 #include <limits.h>
 
+#include "../include/color.h"
+
+extern char **environ;
+
 static char *prev_dir = NULL;
 
 int builtin_cd(char **args)
@@ -73,26 +77,37 @@ int builtin_pwd(char **args)
 int builtin_help(char **args)
 {
     (void)args;
+    const char *h = use_color() ? C_BOLD : "";
+    const char *r = use_color() ? C_RESET : "";
 
-    printf("TinyShell — built-in commands:\n");
-    printf("  cd [dir]      Change directory (default: ~, -: previous)\n");
-    printf("  pwd           Print working directory\n");
-    printf("  echo <text>   Print text\n");
-    printf("  clear         Clear screen\n");
-    printf("  exit [n]      Exit shell (default: 0)\n");
-    printf("  help          Show this help\n");
+    printf("%sTinyShell%s — built-in commands:\n", h, r);
+    printf("  %scd%s [dir]      Change directory (~, -, no arg = home)\n",
+           use_color() ? C_GREEN : "", r);
+    printf("  %spwd%s           Print working directory\n",
+           use_color() ? C_GREEN : "", r);
+    printf("  %secho%s <text>   Print text\n",
+           use_color() ? C_GREEN : "", r);
+    printf("  %sclear%s         Clear screen\n",
+           use_color() ? C_GREEN : "", r);
+    printf("  %sexit%s [n]      Exit shell (default: 0)\n",
+           use_color() ? C_GREEN : "", r);
+    printf("  %sexport%s [VAR=val..]  Set/show environment variables\n",
+           use_color() ? C_GREEN : "", r);
+    printf("  %shelp%s          Show this help\n",
+           use_color() ? C_GREEN : "", r);
     printf("\n");
-    printf("Features:\n");
+    printf("%sFeatures:%s\n", h, r);
     printf("  cmd1 | cmd2       Pipe\n");
     printf("  cmd > file        Redirect stdout (overwrite)\n");
     printf("  cmd >> file       Redirect stdout (append)\n");
     printf("  cmd < file        Redirect stdin\n");
     printf("  cmd &             Background\n");
     printf("  cmd1 ; cmd2       Sequential\n");
-    printf("  $VAR              Variable expansion\n");
+    printf("  $VAR, $?          Variable expansion\n");
     printf("  \"...\" '...'       Quoting\n");
     printf("  ~                 Home directory\n");
-    printf("  $? in prompt      Exit status\n");
+    printf("  ~/.tinyshellrc    Config file (sourced on startup)\n");
+    printf("  Ctrl+C            Interrupt (doesn't kill shell)\n");
 
     return 0;
 }
@@ -113,6 +128,34 @@ int builtin_echo(char **args)
             printf(" ");
     }
     printf("\n");
+    return 0;
+}
+
+int builtin_export(char **args)
+{
+    if (args[1] == NULL)
+    {
+        for (char **e = environ; *e; e++)
+            printf("%s\n", *e);
+        return 0;
+    }
+
+    for (int i = 1; args[i]; i++)
+    {
+        char *eq = strchr(args[i], '=');
+        if (eq)
+        {
+            *eq = '\0';
+            setenv(args[i], eq + 1, 1);
+            *eq = '=';
+        }
+        else
+        {
+            char *val = getenv(args[i]);
+            if (val)
+                setenv(args[i], val, 1);
+        }
+    }
     return 0;
 }
 

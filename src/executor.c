@@ -4,9 +4,11 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "../include/builtins.h"
 #include "../include/command.h"
+#include "../include/color.h"
 
 typedef struct
 {
@@ -15,12 +17,13 @@ typedef struct
 } builtin_t;
 
 static builtin_t builtins[] = {
-    {"cd",    builtin_cd},
-    {"pwd",   builtin_pwd},
-    {"echo",  builtin_echo},
-    {"clear", builtin_clear},
-    {"exit",  builtin_exit},
-    {"help",  builtin_help},
+    {"cd",     builtin_cd},
+    {"pwd",    builtin_pwd},
+    {"echo",   builtin_echo},
+    {"clear",  builtin_clear},
+    {"exit",   builtin_exit},
+    {"export", builtin_export},
+    {"help",   builtin_help},
     {NULL, NULL}
 };
 
@@ -76,13 +79,16 @@ static int exec_command(command_t *cmd)
     if (cmd->args == NULL || cmd->args[0] == NULL)
         return 1;
 
+    signal(SIGINT, SIG_DFL);
     setup_redirects(cmd);
 
     if (is_builtin(cmd->args[0]))
         exit(run_builtin(cmd->args));
 
     execvp(cmd->args[0], cmd->args);
-    fprintf(stderr, "tinyshell: %s: command not found\n", cmd->args[0]);
+    fprintf(stderr, "%stinyshell: %s: command not found%s\n",
+            use_color() ? C_RED : "", cmd->args[0],
+            use_color() ? C_RESET : "");
     exit(127);
 }
 

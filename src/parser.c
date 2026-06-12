@@ -16,6 +16,14 @@ static int expand_var(char *buf, size_t bufsz, const char **pp)
         return 0;
     }
 
+    if (**pp == '?')
+    {
+        (*pp)++;
+        char *val = getenv("?");
+        if (val) strncat(buf, val, bufsz - strlen(buf) - 1);
+        return 1;
+    }
+
     char varname[256];
     int i = 0;
     if (**pp == '{')
