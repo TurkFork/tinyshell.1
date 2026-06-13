@@ -109,6 +109,7 @@ int builtin_help(char **args)
     printf("  \"...\" '...'       Quoting\n");
     printf("  ~                 Home directory\n");
     printf("  ~/.tinyshellrc    Config file (sourced on startup)\n");
+    printf("  -c <cmd>          Run command non-interactively\n");
     printf("  Ctrl+C            Interrupt (doesn't kill shell)\n");
 
     return 0;

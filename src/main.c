@@ -51,8 +51,28 @@ static void load_config(void)
     fclose(f);
 }
 
-int main(void)
+static int run_line(char *input)
 {
+    line_t line = parse_line(input);
+    int last_status = 0;
+    for (int i = 0; i < line.npipelines; i++)
+        last_status = execute_pipeline(&line.pipelines[i]);
+    free_line(&line);
+    return last_status;
+}
+
+int main(int argc, char **argv)
+{
+    if (argc > 1 && strcmp(argv[1], "-c") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "tinyshell: -c requires an argument\n");
+            return 1;
+        }
+        return run_line(argv[2]);
+    }
+
     struct sigaction sa;
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);
@@ -94,16 +114,12 @@ int main(void)
             continue;
         }
 
-        line_t line = parse_line(input);
-
-        for (int i = 0; i < line.npipelines; i++)
-            last_status = execute_pipeline(&line.pipelines[i]);
+        last_status = run_line(input);
 
         char st[16];
         snprintf(st, sizeof(st), "%d", last_status);
         setenv("?", st, 1);
 
-        free_line(&line);
         free(input);
     }
 

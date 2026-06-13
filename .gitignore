@@ -2,3 +2,4 @@ tinyshell
 tinyshell.dSYM/
 *.o
 /builds/
+.DS_Store

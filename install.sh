@@ -1,6 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+REPO="TurkFork/tinyshell.1"
+BRANCH="main"
+DEST=""
+
+usage() {
+    cat <<EOF
+Usage: ${0##*/} [options]
+
+Install TinyShell from GitHub.
+
+Options:
+  -d, --dest DIR     Install to DIR (default: /usr/local/bin or ~/.local/bin)
+  -b, --branch BRANCH  Branch to fetch from (default: main)
+  -h, --help         Show this help
+EOF
+    exit 0
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -d|--dest)    DEST="$2"; shift 2 ;;
+        -b|--branch)  BRANCH="$2"; shift 2 ;;
+        -h|--help)    usage ;;
+        *) echo "unknown option: $1"; usage ;;
+    esac
+done
+
 # --- detect target ---
 arch=""
 case "$(uname -m)" in
@@ -20,43 +47,68 @@ case "$(uname -s)" in
 esac
 
 binary="tinyshell-${os}-${arch}"
-src_dir="$(cd "$(dirname "$0")" && pwd)"
-src="$src_dir/builds/$binary"
 
-if [ ! -f "$src" ]; then
-    echo "error: no prebuilt binary for $os/$arch"
-    echo "  (expected: $src)"
+# --- choose destination ---
+if [ -n "$DEST" ]; then
+    dest="$DEST"
+elif [ -w "/usr/local/bin" ]; then
+    dest="/usr/local/bin"
+else
+    dest="$HOME/.local/bin"
+fi
+mkdir -p "$dest"
+
+# --- download binary ---
+url="https://raw.githubusercontent.com/$REPO/$BRANCH/builds/$binary"
+echo "  downloading $binary ..."
+if ! curl -sL --fail "$url" -o "$dest/tinyshell"; then
+    echo "error: binary not found at $url"
     echo ""
-    echo "Try building from source:  make"
+    echo "  Builds are available for:"
+    echo "    darwin-amd64, darwin-arm64"
+    echo "    linux-amd64, linux-arm64, linux-armv7"
+    exit 1
+fi
+chmod 755 "$dest/tinyshell"
+
+# --- backup existing config ---
+config="$HOME/.tinyshellrc"
+if [ -f "$config" ]; then
+    backup="${config}.bak"
+    if [ ! -f "$backup" ]; then
+        cp "$config" "$backup"
+        echo "  backed up existing config to $backup"
+    fi
+fi
+
+# --- download example config if none exists ---
+if [ ! -f "$config" ]; then
+    config_url="https://raw.githubusercontent.com/$REPO/$BRANCH/examples/tinyshellrc.basic"
+    if curl -sL --fail "$config_url" -o "$config" 2>/dev/null; then
+        echo "  created example config at $config"
+    fi
+fi
+
+# --- verify ---
+if "$dest/tinyshell" -c 'tsh -v' &>/dev/null; then
+    version="$("$dest/tinyshell" -c 'tsh -v' 2>/dev/null)"
+    echo ""
+    echo "  installed: $dest/tinyshell"
+    echo "  version:   $version"
+else
+    echo "error: installed binary failed to run"
     exit 1
 fi
 
-# --- choose install directory ---
-if [ -w "/usr/local/bin" ]; then
-    dest="/usr/local/bin"
-elif [ -w "$HOME/.local/bin" ]; then
-    dest="$HOME/.local/bin"
-else
-    dest="$HOME/.local/bin"
-    mkdir -p "$dest"
-fi
-
-cp "$src" "$dest/tinyshell"
-chmod 755 "$dest/tinyshell"
-
-echo "installed tinyshell to $dest/tinyshell"
-
-# --- optional: copy example config ---
-config_dest="$HOME/.tinyshellrc"
-if [ ! -f "$config_dest" ] && [ -f "$src_dir/examples/tinyshellrc.basic" ]; then
-    cp "$src_dir/examples/tinyshellrc.basic" "$config_dest"
-    echo "created example config at $config_dest"
-fi
-
-# --- ensure dest is on PATH ---
+# --- PATH warning ---
 case ":$PATH:" in
     *":$dest:"*) ;;
-    *) echo "warning: $dest is not on your PATH. add it to your shell rc file:" ;;
+    *)
+        echo ""
+        echo "  warning: $dest is not on your PATH."
+        echo "  add this to your shell rc file:"
+        echo "    export PATH=\"\$PATH:$dest\""
+        ;;
 esac
 
-echo "done."
+echo "  done."
