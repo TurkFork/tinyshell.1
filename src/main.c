@@ -9,6 +9,7 @@
 #include "../include/executor.h"
 #include "../include/input.h"
 #include "../include/command.h"
+#include "../include/plugin.h"
 
 #define RC_FILE ".tinyshellrc"
 #define MAX_LINE 4096
@@ -63,6 +64,16 @@ static int run_line(char *input)
 
 int main(int argc, char **argv)
 {
+    struct sigaction sa;
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGINT, &sa, NULL);
+
+    load_config();
+    init_plugins();
+    init_history();
+
     if (argc > 1 && strcmp(argv[1], "-c") == 0)
     {
         if (argc < 3)
@@ -72,15 +83,6 @@ int main(int argc, char **argv)
         }
         return run_line(argv[2]);
     }
-
-    struct sigaction sa;
-    sa.sa_handler = sigint_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGINT, &sa, NULL);
-
-    load_config();
-    init_history();
 
     int last_status = 0;
 

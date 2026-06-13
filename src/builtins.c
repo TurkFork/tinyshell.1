@@ -9,6 +9,7 @@
 #include "../include/color.h"
 #include "../include/version.h"
 #include "../include/input.h"
+#include "../include/plugin.h"
 
 static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -354,16 +355,40 @@ int builtin_tsh(char **args)
         return imgcat(args[2]);
     }
 
+    if (strcmp(args[1], "plugin") == 0)
+    {
+        if (args[2] == NULL || strcmp(args[2], "list") == 0)
+            return list_plugins(stdout);
+        if (strcmp(args[2], "load") == 0)
+        {
+            if (args[3] == NULL)
+            {
+                fprintf(stderr, "usage: tsh plugin load <path>\n");
+                return 1;
+            }
+            if (load_plugin_cmd(args[3]) == 0)
+            {
+                printf("  plugin loaded\n");
+                return 0;
+            }
+            fprintf(stderr, "  failed to load plugin: %s\n", args[3]);
+            return 1;
+        }
+        fprintf(stderr, "usage: tsh plugin list|load\n");
+        return 1;
+    }
+
     if (strcmp(args[1], "help") == 0 || strcmp(args[1], "-h") == 0 || strcmp(args[1], "--help") == 0)
     {
         printf("Usage: tsh <command>\n");
         printf("\n");
         printf("Commands:\n");
-        printf("  -v, --version   Show version\n");
-        printf("  update, check   Check for updates on GitHub\n");
-        printf("  history         Show command history\n");
-        printf("  image <file>    Display image in terminal\n");
-        printf("  help, -h        Show this help\n");
+        printf("  -v, --version           Show version\n");
+        printf("  update, check           Check for updates on GitHub\n");
+        printf("  history                 Show command history\n");
+        printf("  image <file>            Display image in terminal\n");
+        printf("  plugin list|load <path> Plugin management\n");
+        printf("  help, -h                Show this help\n");
         return 0;
     }
 

@@ -9,6 +9,7 @@
 #include "../include/builtins.h"
 #include "../include/command.h"
 #include "../include/color.h"
+#include "../include/plugin.h"
 
 typedef struct
 {
@@ -86,6 +87,10 @@ static int exec_command(command_t *cmd)
     if (is_builtin(cmd->args[0]))
         _exit(run_builtin(cmd->args));
 
+    tsh_cmd_fn pfn = find_plugin_cmd(cmd->args[0]);
+    if (pfn)
+        _exit(pfn(cmd->args));
+
     execvp(cmd->args[0], cmd->args);
     fprintf(stderr, "%stinyshell: %s: command not found%s\n",
             use_color() ? C_RED : "", cmd->args[0],
@@ -128,10 +133,13 @@ int execute_pipeline(pipeline_t *pl)
     if (n == 0) return 0;
 
     if (n == 1 && !pl->commands[0].background &&
-        !pl->commands[0].infile && !pl->commands[0].outfile &&
-        is_builtin(pl->commands[0].args[0]))
+        !pl->commands[0].infile && !pl->commands[0].outfile)
     {
-        return run_builtin(pl->commands[0].args);
+        if (is_builtin(pl->commands[0].args[0]))
+            return run_builtin(pl->commands[0].args);
+        tsh_cmd_fn pfn = find_plugin_cmd(pl->commands[0].args[0]);
+        if (pfn)
+            return pfn(pl->commands[0].args);
     }
 
     int in_fd = -1;

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SRC="src/main.c src/parser.c src/executor.c src/prompt.c src/builtins.c src/color.c src/input.c"
+SRC="src/main.c src/parser.c src/executor.c src/prompt.c src/builtins.c src/color.c src/input.c src/plugin.c"
 CFLAGS="-Wall -Wextra -Iinclude"
+LDFLAGS="-ldl"
 OUTDIR="builds"
 JOBS=0
 
@@ -22,7 +23,7 @@ done
 build() {
     local cc="$1" cflags="$2" out="$3"
     echo "  -> $out"
-    $cc $CFLAGS $cflags $SRC -o "$OUTDIR/$out"
+    $cc $CFLAGS $cflags $SRC $LDFLAGS -o "$OUTDIR/$out"
 }
 
 echo "Building tinyshell for all targets..."
