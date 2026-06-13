@@ -29,8 +29,8 @@ echo "Building tinyshell for all targets..."
 
 # --- Darwin / macOS ---
 if command -v gcc &>/dev/null; then
-    ( build "gcc" "-arch x86_64 -O2" "tinyshell-darwin-amd64" ) &
-    ( build "gcc" "-arch arm64 -O2"  "tinyshell-darwin-arm64" ) &
+    ( build "gcc" "-arch x86_64 -Os" "tinyshell-darwin-amd64" ) &
+    ( build "gcc" "-arch arm64 -Os"  "tinyshell-darwin-arm64" ) &
 fi
 
 # --- Linux (musl — static, runs on any Linux) ---
@@ -43,7 +43,7 @@ for tuple in x86_64-linux-musl aarch64-linux-musl arm-linux-musleabihf; do
         arm-linux-musleabihf) out="tinyshell-linux-armv7" ;;
     esac
     if command -v "$cc" &>/dev/null; then
-        ( build "$cc" "-O2 -static" "$out" ) &
+        ( build "$cc" "-Os -static -s" "$out" ) &
     fi
 done
 

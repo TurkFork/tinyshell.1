@@ -17,5 +17,9 @@ all:
 run: all
 	./$(OUT)
 
+install: all
+	cp $(OUT) $(DESTDIR)/usr/local/bin/$(OUT)
+	chmod 755 $(DESTDIR)/usr/local/bin/$(OUT)
+
 clean:
 	rm -f $(OUT)
