@@ -1,0 +1,22 @@
+# TinyShell config file — place at ~/.tinyshellrc
+
+# Add Homebrew and local bin to PATH
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# Common environment variables
+export EDITOR="vim"
+export PAGER="less"
+export BROWSER="open"
+
+# Python
+export PIP_REQUIRE_VIRTUALENV="true"
+
+# Go
+export GOPATH="$HOME/go"
+
+# Rust
+export CARGO_HOME="$HOME/.cargo"
+export PATH="$CARGO_HOME/bin:$PATH"
+
+# Say hello
+echo "Welcome to TinyShell"
