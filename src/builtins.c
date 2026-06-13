@@ -3,10 +3,72 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "../include/color.h"
 #include "../include/version.h"
 #include "../include/input.h"
+
+static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void b64encode(const unsigned char *data, int len, FILE *out)
+{
+    int i = 0;
+    while (i < len)
+    {
+        unsigned a = data[i++];
+        int pad = 0;
+        unsigned b = i < len ? data[i++] : (pad++, 0);
+        unsigned c = i < len ? data[i++] : (pad++, 0);
+        unsigned triple = (a << 16) | (b << 8) | c;
+        putc(b64[(triple >> 18) & 0x3f], out);
+        putc(b64[(triple >> 12) & 0x3f], out);
+        putc(pad > 1 ? '=' : b64[(triple >> 6) & 0x3f], out);
+        putc(pad > 0 ? '=' : b64[triple & 0x3f], out);
+    }
+}
+
+static int imgcat(const char *path)
+{
+    struct stat st;
+    if (stat(path, &st) < 0)
+    {
+        fprintf(stderr, "tsh image: %s: %s\n", path, strerror(errno));
+        return 1;
+    }
+
+    FILE *f = fopen(path, "rb");
+    if (!f)
+    {
+        fprintf(stderr, "tsh image: %s: %s\n", path, strerror(errno));
+        return 1;
+    }
+
+    unsigned char *buf = malloc(st.st_size);
+    if (!buf)
+    {
+        fclose(f);
+        fprintf(stderr, "tsh image: out of memory\n");
+        return 1;
+    }
+
+    if (fread(buf, 1, st.st_size, f) != (size_t)st.st_size)
+    {
+        free(buf);
+        fclose(f);
+        fprintf(stderr, "tsh image: read error\n");
+        return 1;
+    }
+    fclose(f);
+
+    printf("\033]1337;File=inline=1:");
+    b64encode(buf, st.st_size, stdout);
+    printf("\a\n");
+
+    free(buf);
+    return 0;
+}
 
 extern char **environ;
 
@@ -282,6 +344,16 @@ int builtin_tsh(char **args)
         return 0;
     }
 
+    if (strcmp(args[1], "image") == 0)
+    {
+        if (args[2] == NULL)
+        {
+            fprintf(stderr, "usage: tsh image <file>\n");
+            return 1;
+        }
+        return imgcat(args[2]);
+    }
+
     if (strcmp(args[1], "help") == 0 || strcmp(args[1], "-h") == 0 || strcmp(args[1], "--help") == 0)
     {
         printf("Usage: tsh <command>\n");
@@ -290,6 +362,7 @@ int builtin_tsh(char **args)
         printf("  -v, --version   Show version\n");
         printf("  update, check   Check for updates on GitHub\n");
         printf("  history         Show command history\n");
+        printf("  image <file>    Display image in terminal\n");
         printf("  help, -h        Show this help\n");
         return 0;
     }
