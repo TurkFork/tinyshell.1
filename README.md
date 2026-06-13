@@ -5,13 +5,9 @@ A small Unix-like shell written in C (macOS/Linux).
 ## Install
 
 ```bash
-# from the repo
-./install.sh
+curl -sL https://raw.githubusercontent.com/TurkFork/tinyshell.1/main/install.sh | sh
 
-# via curl (requires builds/ to be pushed):
-curl -sL https://raw.githubusercontent.com/TurkFork/tinyshell.1/main/install.sh | bash
-
-# build from source (always works):
+# or build from source:
 make && sudo cp tinyshell /usr/local/bin/
 ```
 
